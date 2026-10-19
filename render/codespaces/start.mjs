@@ -9,6 +9,7 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
+import pg from 'pg';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ENV_PATH = join(ROOT, '.env.local');
@@ -111,6 +112,23 @@ async function waitForMedplum() {
   throw new Error('Medplum did not become healthy within five minutes. Check `docker compose logs medplum`.');
 }
 
+async function waitForLedger() {
+  const deadline = Date.now() + 2 * 60 * 1000;
+  while (Date.now() < deadline) {
+    const client = new pg.Client({ connectionString: process.env.LEDGER_DATABASE_URL, connectionTimeoutMillis: 2000 });
+    try {
+      await client.connect();
+      await client.query('select 1');
+      await client.end();
+      return;
+    } catch {
+      await client.end().catch(() => undefined);
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1500));
+  }
+  throw new Error('Ledger database did not become ready within two minutes. Check `docker compose logs ledger-db`.');
+}
+
 function stopPrevious() {
   if (!existsSync(STATE_FILE)) return;
   try {
@@ -151,6 +169,7 @@ async function main() {
   }
 
   Object.assign(process.env, parseEnv(readFileSync(ENV_PATH, 'utf8')));
+  await waitForLedger();
   run(process.execPath, ['render/ledger-migrate.mjs'], { label: 'prepare synthetic ledger database' });
 
   const serviceEnv = { ...process.env };
