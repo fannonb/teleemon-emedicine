@@ -1,0 +1,230 @@
+.cardPad {
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-lg) 0;
+}
+
+/* Summary strip */
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  height: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--tm-border);
+  border-radius: var(--mantine-radius-lg);
+  background: var(--tm-surface-raised);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.stat:not(:disabled):hover {
+  border-color: var(--mantine-color-brand-4);
+  box-shadow: 0 8px 24px -16px rgba(16, 24, 40, 0.35);
+}
+
+.stat:disabled {
+  cursor: default;
+}
+
+.statText {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Schedule: one grid template for header and rows so columns always line up */
+.scheduleGrid {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 104px 112px 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 var(--mantine-spacing-lg);
+}
+
+.scheduleHead {
+  height: 32px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tm-text-muted);
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.scheduleRow {
+  width: 100%;
+  min-height: 58px;
+  border-bottom: 1px solid var(--tm-border);
+  text-align: left;
+  transition: background 120ms ease;
+}
+
+.scheduleRow:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--mantine-radius-lg) var(--mantine-radius-lg);
+}
+
+.scheduleRow:hover {
+  background: var(--tm-surface);
+}
+
+.scheduleRow:hover .rowChevron {
+  color: var(--mantine-color-brand-6);
+  transform: translateX(2px);
+}
+
+.scheduleDone .time,
+.scheduleDone .who {
+  opacity: 0.55;
+}
+
+.scheduleNext {
+  background: light-dark(var(--mantine-color-brand-0), rgba(57, 83, 164, 0.12));
+  box-shadow: inset 3px 0 0 var(--mantine-color-brand-6);
+}
+
+.nowLine {
+  position: relative;
+  height: 0;
+  border-top: 2px solid var(--mantine-color-red-5);
+  margin: 0 var(--mantine-spacing-lg);
+}
+
+.nowLine span {
+  position: absolute;
+  left: 0;
+  top: -10px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 650;
+  color: #ffffff;
+  background: var(--mantine-color-red-6);
+}
+
+.time {
+  display: flex;
+  flex-direction: column;
+}
+
+.who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.where {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modality {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--mantine-radius-sm);
+  color: var(--tm-text-muted);
+  border: 1px solid var(--tm-border);
+}
+
+.rowChevron {
+  color: var(--tm-text-muted);
+  transition: transform 120ms ease, color 120ms ease;
+  flex-shrink: 0;
+}
+
+@media (max-width: 48em) {
+  .scheduleGrid {
+    grid-template-columns: 64px minmax(0, 1fr) 96px 16px;
+  }
+  .hideSm {
+    display: none;
+  }
+}
+
+/* Alerts */
+.allClear {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alertRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 8px;
+  margin: 0 -8px;
+  border-radius: var(--mantine-radius-md);
+  text-align: left;
+}
+
+.alertRowLink {
+  width: calc(100% + 16px);
+}
+
+.alertRowLink:hover {
+  background: var(--tm-surface);
+}
+
+.alertRow .rowChevron {
+  margin-top: 6px;
+}
+
+.alertText {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Work queues */
+.queueList {
+  display: flex;
+  flex-direction: column;
+}
+
+.queueRow {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto 16px;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 8px;
+  margin: 0 -8px;
+  border-radius: var(--mantine-radius-md);
+}
+
+.queueRow + .queueRow {
+  border-top: 1px solid var(--tm-border);
+}
+
+.queueRow:hover {
+  background: var(--tm-surface);
+}
+
+.queueIcon {
+  display: inline-flex;
+  color: var(--mantine-color-navy-6);
+}
+
+[data-mantine-color-scheme='dark'] .queueIcon {
+  color: var(--mantine-color-navy-3);
+}
+
+.queueLabel {
+  min-width: 0;
+}
+
+.queueMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.queueCount {
+  min-width: 28px;
+  text-align: right;
+  font-size: 18px;
+}

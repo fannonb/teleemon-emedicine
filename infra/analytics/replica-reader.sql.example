@@ -1,0 +1,24 @@
+-- Apply only on the dedicated analytics replica, after the analytics schema contains
+-- reviewed, minimum-necessary reporting views. Never grant Metabase access to the FHIR or
+-- ledger source schemas directly.
+-- Set the password through the database secret manager or an interactive secure mechanism.
+
+CREATE ROLE teleemon_metabase_reader
+  LOGIN
+  NOSUPERUSER
+  NOCREATEDB
+  NOCREATEROLE
+  NOINHERIT
+  CONNECTION LIMIT 10;
+
+ALTER ROLE teleemon_metabase_reader SET default_transaction_read_only = on;
+ALTER ROLE teleemon_metabase_reader SET statement_timeout = '30s';
+
+-- Replace the database/schema names with the approved replica and sanitized reporting schema.
+GRANT CONNECT ON DATABASE teleemon_analytics_replica TO teleemon_metabase_reader;
+GRANT USAGE ON SCHEMA analytics TO teleemon_metabase_reader;
+GRANT SELECT ON ALL TABLES IN SCHEMA analytics TO teleemon_metabase_reader;
+
+-- Replace teleemon_analytics_owner with the role that creates future views in analytics.
+ALTER DEFAULT PRIVILEGES FOR ROLE teleemon_analytics_owner IN SCHEMA analytics
+  GRANT SELECT ON TABLES TO teleemon_metabase_reader;

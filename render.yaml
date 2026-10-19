@@ -1,0 +1,303 @@
+# Render Blueprint for Teleemon.
+#
+# Machine-readable companion to docs/RENDER-DEPLOYMENT.md. It provisions:
+#   - the self-hosted Medplum FHIR server (Docker image + persistent disk)
+#   - a Render PostgreSQL for Medplum and another for the ledger
+#   - a Render Key Value (Redis) instance for Medplum
+#   - Node gateways for the staff and patient-portal Vite apps
+#   - the portal API, ledger and scribe services, and a one-minute worker cron
+#
+# Values written here with `value: ""` are produced by `npm run setup` against the deployed
+# Medplum. `npm run render:env` prints the exact blocks to paste in after setup. Everything runs on
+# synthetic data until contracts, BAAs and PHI controls are in place.
+#
+# Service names end up in the onrender.com hostnames referenced below. If a name is taken, Render
+# appends a suffix; update MEDPLUM_ALLOWED_ORIGINS / LEDGER_ALLOWED_ORIGINS / SCRIBE_ALLOWED_ORIGINS
+# and MEDPLUM_APP_BASE_URL to the actual hostnames afterwards.
+
+services:
+  # ---------------------------------------------------------------- Medplum FHIR API
+  - type: web
+    name: teleemon-medplum
+    runtime: docker
+    dockerfilePath: ./render/medplum/Dockerfile
+    dockerContext: ./render/medplum
+    plan: 1c-2g
+    region: oregon
+    healthCheckPath: /healthcheck
+    maxShutdownDelaySeconds: 60
+    disk:
+      name: medplum-data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: MEDPLUM_DEFAULT_SUPER_ADMIN_EMAIL
+        value: admin@teleemon.example
+      - key: MEDPLUM_DEFAULT_SUPER_ADMIN_PASSWORD
+        sync: false
+      - key: MEDPLUM_SUPPORT_EMAIL
+        value: '"Teleemon" <support@teleemon.example>'
+      - key: MEDPLUM_BINARY_STORAGE
+        value: file:/data/binary/
+      - key: MEDPLUM_ALLOWED_ORIGINS
+        value: ''
+      - key: MEDPLUM_APP_BASE_URL
+        value: ''
+      - key: MEDPLUM_EMAIL_PROVIDER
+        value: none
+      - key: MEDPLUM_VM_CONTEXT_BOTS_ENABLED
+        value: 'true'
+      - key: MEDPLUM_DEFAULT_BOT_RUNTIME_VERSION
+        value: vmcontext
+      - key: MEDPLUM_PRE_COMMIT_SUBSCRIPTIONS_ENABLED
+        value: 'true'
+      - key: MEDPLUM_SAVE_AUDIT_EVENTS
+        value: 'true'
+      - key: MEDPLUM_LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        fromDatabase:
+          name: teleemon-medplum-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: teleemon-redis
+          type: keyvalue
+          property: connectionString
+
+  # ---------------------------------------------------------------- Staff web app
+  - type: web
+    name: teleemon-staff
+    runtime: node
+    plan: 0.5c-512mb
+    region: oregon
+    healthCheckPath: /healthz
+    buildCommand: npm ci --include=dev && npm run build -w apps/staff
+    startCommand: node render/gateway.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.5
+      - key: SERVE_DIR
+        value: apps/staff/dist
+      - key: MEDPLUM_BASE_URL
+        fromService:
+          name: teleemon-medplum
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: MEDPLUM_PROJECT_ID
+        value: ''
+      - key: VITE_PORTAL_URL
+        fromService:
+          name: teleemon-portal
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: LEDGER_API_HOST
+        fromService:
+          name: teleemon-ledger
+          type: web
+          property: host
+      - key: LEDGER_API_PORT
+        fromService:
+          name: teleemon-ledger
+          type: web
+          property: port
+      - key: SCRIBE_API_HOST
+        fromService:
+          name: teleemon-scribe
+          type: web
+          property: host
+      - key: SCRIBE_API_PORT
+        fromService:
+          name: teleemon-scribe
+          type: web
+          property: port
+
+  # ---------------------------------------------------------------- Patient portal app
+  - type: web
+    name: teleemon-portal
+    runtime: node
+    plan: 0.5c-512mb
+    region: oregon
+    healthCheckPath: /healthz
+    buildCommand: npm ci --include=dev && npm run build -w apps/portal
+    startCommand: node render/gateway.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.5
+      - key: SERVE_DIR
+        value: apps/portal/dist
+      - key: MEDPLUM_BASE_URL
+        fromService:
+          name: teleemon-medplum
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: MEDPLUM_PROJECT_ID
+        value: ''
+      - key: MEDPLUM_CLIENT_ID
+        value: ''
+      - key: PORTAL_API_HOST
+        fromService:
+          name: teleemon-portal-api
+          type: web
+          property: host
+      - key: PORTAL_API_PORT
+        fromService:
+          name: teleemon-portal-api
+          type: web
+          property: port
+
+  # ---------------------------------------------------------------- Portal API service
+  - type: web
+    name: teleemon-portal-api
+    runtime: node
+    plan: 0.5c-512mb
+    region: oregon
+    buildCommand: npm ci --include=dev
+    startCommand: npm run portal
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.5
+      - key: TELEEMON_PORTAL_HOST
+        value: 0.0.0.0
+      - key: TRUST_PROXY
+        value: '1'
+      - key: MEDPLUM_BASE_URL
+        fromService:
+          name: teleemon-medplum
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: TELEEMON_PORTAL_URL
+        value: ''
+      - key: TELEEMON_PROJECT_ID
+        value: ''
+      - key: TELEEMON_PORTAL_CLIENT_ID
+        value: ''
+      - key: TELEEMON_PORTAL_CLIENT_SECRET
+        value: ''
+      - key: TELEEMON_PORTAL_ACCOUNTS_CLIENT_ID
+        value: ''
+      - key: TELEEMON_PORTAL_ACCOUNTS_CLIENT_SECRET
+        value: ''
+      - key: TELEEMON_PORTAL_SECRET
+        value: ''
+      - key: LEDGER_INTERNAL_TOKEN
+        value: ''
+      - key: LEDGER_HOST
+        fromService:
+          name: teleemon-ledger
+          type: web
+          property: host
+      - key: LEDGER_PORT
+        fromService:
+          name: teleemon-ledger
+          type: web
+          property: port
+
+  # ---------------------------------------------------------------- Ledger service
+  - type: web
+    name: teleemon-ledger
+    runtime: node
+    plan: 0.5c-512mb
+    region: oregon
+    buildCommand: npm ci --include=dev
+    preDeployCommand: node render/ledger-migrate.mjs
+    startCommand: npm run ledger
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.5
+      - key: LEDGER_HOST
+        value: 0.0.0.0
+      - key: LEDGER_ALLOWED_ORIGINS
+        value: ''
+      - key: LEDGER_INTERNAL_TOKEN
+        value: ''
+      - key: LEDGER_DATABASE_URL
+        fromDatabase:
+          name: teleemon-ledger-db
+          property: connectionString
+
+  # ---------------------------------------------------------------- Scribe service
+  - type: web
+    name: teleemon-scribe
+    runtime: node
+    plan: 0.5c-512mb
+    region: oregon
+    buildCommand: npm ci --include=dev
+    startCommand: npm run scribe
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.5
+      - key: SCRIBE_HOST
+        value: 0.0.0.0
+      - key: SCRIBE_ALLOWED_ORIGINS
+        value: ''
+      - key: SCRIBE_ALLOW_PHI
+        value: 'false'
+      - key: SCRIBE_CLINICAL_APPROVED
+        value: 'false'
+      - key: OPENAI_API_KEY
+        value: ''
+      - key: MEDPLUM_BASE_URL
+        fromService:
+          name: teleemon-medplum
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # ---------------------------------------------------------------- Background worker (cron)
+  - type: cron
+    name: teleemon-worker
+    runtime: node
+    plan: 0.5c-512mb
+    region: oregon
+    schedule: '* * * * *'
+    buildCommand: npm ci --include=dev
+    startCommand: npm run worker -- --once
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.5
+      - key: MEDPLUM_BASE_URL
+        fromService:
+          name: teleemon-medplum
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: TELEEMON_WORKER_CLIENT_ID
+        value: ''
+      - key: TELEEMON_WORKER_CLIENT_SECRET
+        value: ''
+      - key: LEDGER_INTERNAL_TOKEN
+        value: ''
+      - key: LEDGER_HOST
+        fromService:
+          name: teleemon-ledger
+          type: web
+          property: host
+      - key: LEDGER_PORT
+        fromService:
+          name: teleemon-ledger
+          type: web
+          property: port
+
+  # ---------------------------------------------------------------- Redis for Medplum
+  - type: keyvalue
+    name: teleemon-redis
+    plan: 256mb
+    region: oregon
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+    ipAllowList: []
+
+databases:
+  - name: teleemon-medplum-db
+    databaseName: medplum
+    user: medplum
+    plan: 0.5c-1g
+    region: oregon
+    postgresMajorVersion: '16'
+    ipAllowList: []
+  - name: teleemon-ledger-db
+    databaseName: teleemon_ledger
+    user: teleemon_ledger
+    plan: 0.5c-1g
+    region: oregon
+    postgresMajorVersion: '16'
+    ipAllowList: []

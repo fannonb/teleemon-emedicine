@@ -1,0 +1,25 @@
+.actions { display: none; }
+
+@media (max-width: 74.99em) {
+  .form { padding-bottom: 90px; }
+  .actions {
+    position: fixed;
+    bottom: 0;
+    left: var(--app-shell-navbar-offset, 0px);
+    right: 0;
+    z-index: 90;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--tm-border);
+    background: var(--tm-surface-raised);
+  }
+  .progress { margin-right: auto; }
+}
+
+@media (max-width: 36em) {
+  .actions { padding-inline: 12px; gap: 8px; }
+  .progress { display: none; }
+}

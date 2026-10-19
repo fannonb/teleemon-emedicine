@@ -1,0 +1,89 @@
+.contextBar {
+  position: sticky;
+  top: 60px;
+  z-index: 50;
+  background: var(--tm-surface-raised);
+  border-bottom: 1px solid var(--tm-border);
+  box-shadow: 0 6px 16px -14px rgba(16, 24, 40, 0.4);
+}
+
+.contextInner {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-md);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 10px var(--mantine-spacing-lg);
+  flex-wrap: wrap;
+}
+
+.body {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--mantine-spacing-lg);
+}
+
+.stickySide {
+  position: sticky;
+  top: 140px;
+}
+
+@media (max-width: 75em) {
+  .stickySide {
+    position: static;
+  }
+}
+
+.sectionFlagged {
+  border-left: 3px solid var(--mantine-color-orange-5);
+}
+
+.dxRow {
+  padding: 4px 6px;
+  border-radius: var(--mantine-radius-sm);
+  background: var(--tm-surface);
+}
+
+/* Review and signed note */
+.paper {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  background: var(--tm-surface-raised);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: 0 12px 32px -20px rgba(16, 24, 40, 0.35);
+}
+
+@media (max-width: 48em) {
+  .paper {
+    padding: 20px;
+  }
+}
+
+.paperHeading {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mantine-color-navy-6);
+  margin: 18px 0 4px;
+}
+
+[data-mantine-color-scheme='dark'] .paperHeading {
+  color: var(--mantine-color-navy-3);
+}
+
+.paperText {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.amendment {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--mantine-color-blue-5);
+  background: light-dark(var(--mantine-color-blue-0), rgba(34, 139, 230, 0.1));
+  border-radius: 0 var(--mantine-radius-md) var(--mantine-radius-md) 0;
+}

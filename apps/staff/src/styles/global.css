@@ -1,0 +1,76 @@
+/* Neue Montreal ships in two weights (same files as GG'APP). Ranges route in-between weights:
+   300–500 render Regular, 600–900 render Bold, so headings at 650 never get faux bolding. */
+@font-face {
+  font-family: 'Neue Montreal';
+  src: url('/fonts/neue-montreal/NeueMontreal-Regular.woff2') format('woff2'),
+    url('/fonts/neue-montreal/NeueMontreal-Regular.woff') format('woff');
+  font-weight: 300 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Neue Montreal';
+  src: url('/fonts/neue-montreal/NeueMontreal-Bold.woff2') format('woff2'),
+    url('/fonts/neue-montreal/NeueMontreal-Bold.woff') format('woff');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --tm-surface: #f6f8fb;
+  --tm-surface-raised: #ffffff;
+  --tm-border: #e3e8ef;
+  --tm-text-muted: #5b6b80;
+  --tm-sidebar-bg: #1F2D5C;
+  --tm-sidebar-bg-hover: rgba(255, 255, 255, 0.07);
+  --tm-sidebar-bg-active: rgba(95, 211, 193, 0.14);
+  --tm-sidebar-text: #c9d5e4;
+  --tm-sidebar-text-active: #ffffff;
+  --tm-sidebar-accent: #8A9DD4;
+  --tm-sidebar-section: #a8bad1;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --tm-surface: #0f1722;
+  --tm-surface-raised: #16202d;
+  --tm-border: #263345;
+  --tm-text-muted: #94a3b8;
+  --tm-sidebar-bg: #0b1420;
+  --tm-sidebar-section: #94a8c4;
+}
+
+html,
+body {
+  background: var(--tm-surface);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+/* Times, money, scores and counts line up in columns. */
+.tm-num {
+  /* Neue Montreal has proportional digits only (no tnum); a system face keeps columns aligned. */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.mantine-Card-root,
+.mantine-Paper-root[data-with-border] {
+  background: var(--tm-surface-raised);
+  border-color: var(--tm-border);
+}
+
+/* Visible focus for keyboard users, never for mouse clicks. */
+:focus-visible {
+  outline: 2px solid var(--mantine-color-brand-6);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

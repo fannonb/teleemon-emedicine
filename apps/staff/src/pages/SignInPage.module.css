@@ -1,0 +1,100 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(380px, 44%) 1fr;
+  background: var(--tm-surface);
+}
+
+/* Navy brand panel (wide screens). The gradient stays navy in both colour schemes. */
+.brandPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+  padding: 56px 56px 40px;
+  color: #ffffff;
+  background:
+    radial-gradient(900px 420px at 0% 105%, rgba(57, 83, 164, 0.55), transparent 65%),
+    linear-gradient(165deg, #1f2d5c 0%, #141e42 100%);
+}
+
+.headline {
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 700;
+  max-width: 420px;
+  color: #ffffff;
+}
+
+.points {
+  margin-top: 28px;
+  color: #d3dcee;
+  font-size: 15px;
+}
+
+.legal {
+  color: #9fb0d2;
+}
+
+/* Narrow screens: a navy band with the compact logo. Hidden on wide screens. */
+.mobileHeader {
+  display: none;
+}
+
+.formPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  background: var(--tm-surface-raised);
+  border-color: var(--tm-border);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 16px 40px -16px rgba(20, 30, 66, 0.22);
+}
+
+.cardBody {
+  padding: 36px 32px 32px;
+}
+
+/* Medplum's SignInForm draws its own bordered panel; the card above is the only frame. */
+.cardBody :global(.mantine-Paper-root) {
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
+}
+
+@media (max-width: 62em) {
+  .page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .brandPanel {
+    display: none;
+  }
+  .mobileHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+    background: linear-gradient(165deg, #1f2d5c 0%, #141e42 100%);
+  }
+  .mobileTagline {
+    color: #d3dcee;
+  }
+  .formPanel {
+    padding: 28px 16px 40px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 30em) {
+  .cardBody {
+    padding: 28px 20px 24px;
+  }
+}

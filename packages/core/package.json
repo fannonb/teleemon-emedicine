@@ -1,0 +1,12 @@
+{
+  "name": "@teleemon/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@medplum/core": "5.2.4",
+    "@medplum/fhirtypes": "5.2.4"
+  }
+}

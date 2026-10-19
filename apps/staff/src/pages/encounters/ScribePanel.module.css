@@ -1,0 +1,6 @@
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.meter { padding: 12px 14px; background: var(--tm-surface); border-radius: 8px; }
+.proposal { border-top: 1px solid var(--tm-border); padding: 16px 0; }
+.transcript { padding: 12px; background: var(--tm-surface); border-radius: 8px; white-space: pre-wrap; line-height: 1.65; }
+.clock { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }

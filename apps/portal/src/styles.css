@@ -1,0 +1,188 @@
+@font-face {
+  font-family: 'Neue Montreal';
+  src: url('/fonts/neue-montreal/NeueMontreal-Regular.woff2') format('woff2'), url('/fonts/neue-montreal/NeueMontreal-Regular.woff') format('woff');
+  font-weight: 300 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Neue Montreal';
+  src: url('/fonts/neue-montreal/NeueMontreal-Bold.woff2') format('woff2'), url('/fonts/neue-montreal/NeueMontreal-Bold.woff') format('woff');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --tm-surface: #f6f8fb;
+  --tm-surface-raised: #ffffff;
+  --tm-border: #e3e8ef;
+  --tm-text-muted: #5b6b80;
+  --tm-header: #1F2D5C;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --tm-surface: #0f1722;
+  --tm-surface-raised: #16202d;
+  --tm-border: #263345;
+  --tm-text-muted: #94a3b8;
+  --tm-header: #0b1420;
+}
+
+html,
+body {
+  background: var(--tm-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tm-num {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.mantine-Card-root {
+  background: var(--tm-surface-raised);
+  border-color: var(--tm-border);
+}
+
+:focus-visible {
+  outline: 2px solid var(--mantine-color-brand-6);
+  outline-offset: 2px;
+}
+
+.tm-page {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.tm-header {
+  background: var(--tm-header);
+  color: #fff;
+}
+
+.tm-header-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tm-crisis {
+  border-top: 1px solid var(--tm-border);
+  background: var(--tm-surface-raised);
+}
+
+.tm-crisis-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px 16px 18px;
+}
+
+.tm-times {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.tm-day-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.tm-day-strip > * {
+  flex: 0 0 auto;
+}
+
+/* Mobile bottom navigation, desktop inline links. */
+.tm-bottom-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: var(--tm-surface-raised);
+  border-top: 1px solid var(--tm-border);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.tm-bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 10px;
+  font-size: 12px;
+  color: var(--tm-text-muted);
+  text-decoration: none;
+  min-height: 56px;
+  justify-content: center;
+}
+
+.tm-bottom-nav a[aria-current='page'] {
+  color: var(--mantine-color-brand-8);
+  font-weight: 650;
+}
+
+@media (min-width: 48em) {
+  .tm-bottom-nav {
+    display: none;
+  }
+}
+
+.tm-top-links {
+  display: none;
+}
+
+@media (min-width: 48em) {
+  .tm-top-links {
+    display: flex;
+    gap: 6px;
+    margin-left: 20px;
+  }
+  .tm-top-links a {
+    color: #c9d5e4;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .tm-top-links a[aria-current='page'] {
+    color: #fff;
+    background: rgba(95, 211, 193, 0.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Intake step buttons: one row that scrolls sideways on phones instead of wrapping. */
+.tm-step-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.tm-step-row > * {
+  flex-shrink: 0;
+}
+@media (min-width: 48em) {
+  .tm-step-row {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}

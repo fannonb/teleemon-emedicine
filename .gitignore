@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+*.log
+.superdesign/
+services/worker/clearinghouse-mock.json
+services/worker/clearinghouse-mock.json.tmp
+
+# Local deployment credentials/tooling and private review artifacts
+.render.local/
+Teleemon Investor Proposal.docx
+docs/proposal/
+docs/verification/*.dump
+docs/verification/*.jpg
+docs/verification/advancedmd-synthetic.json
+docs/verification/phase9-recovery.json
+docs/**/*.pdf
+docs/**/*.docx
+docs/**/*.png
