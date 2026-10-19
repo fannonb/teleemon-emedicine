@@ -1,0 +1,63 @@
+# Free hybrid demo blueprint. Only the two Node gateways are hosted on Render; APIs, Medplum,
+# database and other local services stay on the developer machine and are exposed through tunnels.
+# This is deliberately separate from ../render.yaml, which provisions paid backend resources.
+
+services:
+  - type: web
+    name: teleemon-staff-demo
+    runtime: node
+    plan: free
+    region: oregon
+    healthCheckPath: /healthz
+    buildCommand: npm ci --include=dev && npm run build -w apps/staff
+    startCommand: node render/gateway.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 22.23.3
+      - key: SERVE_DIR
+        value: apps/staff/dist
+      - key: MEDPLUM_BASE_URL
+        sync: false
+      - key: MEDPLUM_API_URL
+        sync: false
+      - key: MEDPLUM_PROJECT_ID
+        sync: false
+      - key: MEDPLUM_CLIENT_ID
+        sync: false
+      - key: VITE_PORTAL_URL
+        fromService:
+          name: teleemon-patient-demo
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: LEDGER_API_URL
+        sync: false
+      - key: SCRIBE_API_URL
+        sync: false
+      - key: HYBRID_DEMO_TOKEN
+        sync: false
+
+  - type: web
+    name: teleemon-patient-demo
+    runtime: node
+    plan: free
+    region: oregon
+    healthCheckPath: /healthz
+    buildCommand: npm ci --include=dev && npm run build -w apps/portal
+    startCommand: node render/gateway.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 22.23.3
+      - key: SERVE_DIR
+        value: apps/portal/dist
+      - key: MEDPLUM_BASE_URL
+        sync: false
+      - key: MEDPLUM_API_URL
+        sync: false
+      - key: MEDPLUM_PROJECT_ID
+        sync: false
+      - key: MEDPLUM_CLIENT_ID
+        sync: false
+      - key: PORTAL_API_URL
+        sync: false
+      - key: HYBRID_DEMO_TOKEN
+        sync: false
