@@ -20,7 +20,8 @@ const DEFAULTS = {
   MEDPLUM_BASE_URL: 'http://127.0.0.1:8103/',
   MEDPLUM_PUBLIC_BASE_URL: 'https://teleemon-staff-demo.onrender.com/medplum/',
   MEDPLUM_STAFF_URL: 'https://teleemon-staff-demo.onrender.com/',
-  MEDPLUM_ADMIN_EMAIL: 'admin@teleemon.test',
+  MEDPLUM_ADMIN_EMAIL: 'platform-admin@teleemon.test',
+  TELEEMON_ADMIN_EMAIL: 'admin@teleemon.test',
   TELEEMON_PORTAL_URL: 'https://teleemon-patient-demo.onrender.com/',
   TELEEMON_PORTAL_HOST: '127.0.0.1',
   TELEEMON_PORTAL_PORT: '3120',
@@ -46,9 +47,6 @@ function requireCodespaces() {
   if (process.env.CODESPACES !== 'true' || !process.env.CODESPACE_NAME) {
     throw new Error('This bootstrap only runs inside GitHub Codespaces.');
   }
-  if ((process.env.HYBRID_DEMO_TOKEN ?? '').length < 32) {
-    throw new Error('Add HYBRID_DEMO_TOKEN as a GitHub Codespaces secret. It must match the value on both Render demo services.');
-  }
 }
 
 function envValue(value) {
@@ -63,6 +61,8 @@ function prepareEnv() {
   setIfMissing('MEDPLUM_ADMIN_PASSWORD', randomBytes(32).toString('base64url'));
   setIfMissing('MEDPLUM_DEFAULT_SUPER_ADMIN_EMAIL', values.MEDPLUM_ADMIN_EMAIL);
   setIfMissing('MEDPLUM_DEFAULT_SUPER_ADMIN_PASSWORD', values.MEDPLUM_ADMIN_PASSWORD);
+  setIfMissing('TELEEMON_ADMIN_EMAIL', 'admin@teleemon.test');
+  setIfMissing('TELEEMON_ADMIN_PASSWORD', 'Teleemon-Local-2026');
   setIfMissing('MEDPLUM_DB_PASSWORD', randomBytes(24).toString('hex'));
   setIfMissing('LEDGER_DB_PASSWORD', randomBytes(24).toString('hex'));
   setIfMissing('MEDPLUM_REDIS_PASSWORD', randomBytes(24).toString('hex'));
@@ -135,6 +135,9 @@ async function main() {
   mkdirSync(STATE_DIR, { recursive: true, mode: 0o700 });
   mkdirSync(LOG_DIR, { recursive: true, mode: 0o700 });
   prepareEnv();
+  if ((process.env.HYBRID_DEMO_TOKEN ?? '').length < 32) {
+    throw new Error('Set HYBRID_DEMO_TOKEN in the ignored Codespaces .env.local file or as a Codespaces secret. It must match the value on both Render demo services.');
+  }
   stopPrevious();
 
   run('docker', ['compose', '--project-name', 'teleemon-codespaces', '--env-file', '.env.local', '-f', COMPOSE_FILE, 'up', '-d', '--build'], { label: 'start Medplum, Postgres and Redis' });

@@ -12,11 +12,11 @@ This configuration runs the demo backend in GitHub Codespaces and keeps the prov
 ## Prepare the GitHub repository
 
 1. Confirm the repository is `fannonb/teleemon-emedicine` and that the latest configuration is on the branch used to create the Codespace.
-2. In **Repository Settings → Secrets and variables → Codespaces**, add `HYBRID_DEMO_TOKEN`. Use the same random value already configured in the Render provider and patient services. It must be at least 32 characters. Never paste it into a source file or terminal command that gets recorded.
+2. An authorized operator must place `HYBRID_DEMO_TOKEN` in the Codespace's ignored `.env.local` file, or provide it as a Codespaces secret. Use the same random value already configured in the Render provider and patient services. It must be at least 32 characters. Never commit it or print it in a terminal transcript.
 3. Create a Codespace on the demo branch using a **2-core Linux machine**. The devcontainer installs Node 22, Docker-in-Docker and the project dependencies. Allow its first build to finish.
 4. In the Codespaces **Ports** panel, confirm port `3400` has visibility **Public**. No other port should be forwarded.
 
-The automatic startup creates a random Medplum administrator password and database passwords in ignored, owner-readable `.env.local` files in the Codespace. It initializes the Teleemon project, applies Bots and policies, creates synthetic users, seeds synthetic patients and visits, applies the ledger schema, and starts the services. It does not print generated administrator/database passwords or the shared gateway token. Seeded demo logins use the synthetic passwords already listed in the repository README and phase 7 checklist.
+The automatic startup creates a random Medplum super-administrator password and database passwords in the ignored, owner-readable `.env.local` file in the Codespace. It uses a separate synthetic practice-admin password, initializes the Teleemon project, applies Bots and policies, creates synthetic users, seeds synthetic patients and visits, applies the ledger schema, and starts the services. It does not print generated administrator/database passwords or the shared gateway token. Seeded demo logins use the synthetic passwords already listed in the repository README and phase 7 checklist.
 
 ## Connect the Render frontends
 
@@ -27,7 +27,7 @@ After Codespaces exposes port `3400`, copy its **public HTTPS origin** (the `htt
 - `LEDGER_API_URL`
 - `SCRIBE_API_URL`
 
-Keep `HYBRID_DEMO_TOKEN` set to the same secret on each Render service and in the Codespaces secret. These variables are server-side gateway configuration; do not add the token to any `VITE_*` setting or browser code. Keep each frontend's existing public `MEDPLUM_BASE_URL`, client ID, project ID and portal URL values. The Medplum server is configured with the provider app's public `/medplum/` URL and the bootstrap script connects to its private loopback port for initialization.
+Keep `HYBRID_DEMO_TOKEN` set to the same secret on each Render service and in the Codespace's ignored environment file. These variables are server-side gateway configuration; do not add the token to any `VITE_*` setting or browser code. A freshly seeded backend creates new project and client IDs: copy `MEDPLUM_PROJECT_ID` and each app's `MEDPLUM_CLIENT_ID` from its generated `apps/<app>/.env.local` into the corresponding Render service, then rebuild both frontends. Preserve the existing public frontend URLs. The Medplum server is configured with the provider app's public `/medplum/` URL and the bootstrap script connects to its private loopback port for initialization. Confirm the patient client allows the patient Render origin with a trailing slash as its OAuth redirect.
 
 The Codespaces public URL can change if the Codespace is deleted and recreated. If it changes, update all four Render API URL settings again. A stopped Codespace makes the backend unavailable; resume it and wait for the startup message before opening the Render apps.
 

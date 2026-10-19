@@ -22,8 +22,9 @@ services:
     command: ["redis-server", "--requirepass", "${MEDPLUM_REDIS_PASSWORD:?Run the Codespaces bootstrap first}"]
     environment:
       MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:?Run the Codespaces bootstrap first}
+      REDISCLI_AUTH: ${MEDPLUM_REDIS_PASSWORD:?Run the Codespaces bootstrap first}
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$MEDPLUM_REDIS_PASSWORD\" ping | grep -q PONG"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 20
