@@ -16,6 +16,7 @@ const ENV_PATH = join(ROOT, '.env.local');
 const STATE_DIR = join(tmpdir(), 'teleemon-codespaces-demo');
 const STATE_FILE = join(STATE_DIR, 'processes.json');
 const LOG_DIR = join(homedir(), '.teleemon-codespaces', 'logs');
+const BOOTSTRAP_STATE_FILE = join(homedir(), '.teleemon-codespaces', 'bootstrap-stages.json');
 const COMPOSE_FILE = 'render/codespaces/docker-compose.yml';
 const DEFAULTS = {
   MEDPLUM_BASE_URL: 'http://127.0.0.1:8103/',
@@ -140,6 +141,27 @@ function stopPrevious() {
   } catch { /* stale state file */ }
 }
 
+function loadBootstrapStages() {
+  try {
+    const saved = JSON.parse(readFileSync(BOOTSTRAP_STATE_FILE, 'utf8'));
+    const projectId = process.env.TELEEMON_PROJECT_ID ?? null;
+    if (saved.medplumBaseUrl === process.env.MEDPLUM_BASE_URL && saved.projectId === projectId) return saved;
+  } catch { /* first run or a stale marker */ }
+  return {
+    medplumBaseUrl: process.env.MEDPLUM_BASE_URL,
+    projectId: process.env.TELEEMON_PROJECT_ID ?? null,
+    setup: false,
+    seed: false,
+    portalDemo: false,
+  };
+}
+
+function saveBootstrapStages(stages) {
+  stages.medplumBaseUrl = process.env.MEDPLUM_BASE_URL;
+  stages.projectId = process.env.TELEEMON_PROJECT_ID ?? null;
+  writeFileSync(BOOTSTRAP_STATE_FILE, JSON.stringify(stages, null, 2) + '\n', { mode: 0o600 });
+}
+
 function launch(name, command, args, env) {
   const stdout = openSync(join(LOG_DIR, `${name}.log`), 'a');
   const stderr = openSync(join(LOG_DIR, `${name}.log`), 'a');
@@ -161,11 +183,22 @@ async function main() {
   run('docker', ['compose', '--project-name', 'teleemon-codespaces', '--env-file', '.env.local', '-f', COMPOSE_FILE, 'up', '-d', '--build'], { label: 'start Medplum, Postgres and Redis' });
   await waitForMedplum();
 
-  if (!process.env.TELEEMON_CLIENT_ID || !process.env.TELEEMON_CLIENT_SECRET) {
+  const stages = loadBootstrapStages();
+  if (!stages.setup) {
     run('npm', ['run', 'setup'], { label: 'initialize synthetic Teleemon project' });
     Object.assign(process.env, parseEnv(readFileSync(ENV_PATH, 'utf8')));
+    stages.setup = true;
+    saveBootstrapStages(stages);
+  }
+  if (!stages.seed) {
     run('npm', ['run', 'seed'], { label: 'seed synthetic patients and appointments' });
+    stages.seed = true;
+    saveBootstrapStages(stages);
+  }
+  if (!stages.portalDemo) {
     run('npm', ['run', 'portal:demo'], { label: 'create synthetic patient portal sign-ins' });
+    stages.portalDemo = true;
+    saveBootstrapStages(stages);
   }
 
   Object.assign(process.env, parseEnv(readFileSync(ENV_PATH, 'utf8')));

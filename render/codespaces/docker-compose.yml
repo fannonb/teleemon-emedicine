@@ -61,6 +61,7 @@ services:
       DATABASE_URL: postgresql://medplum:${MEDPLUM_DB_PASSWORD}@medplum-db:5432/medplum
       REDIS_URL: redis://:${MEDPLUM_REDIS_PASSWORD}@redis:6379
       MEDPLUM_BASE_URL: ${MEDPLUM_PUBLIC_BASE_URL:?Set the Render /medplum URL in the Codespaces environment}
+      MEDPLUM_VM_CONTEXT_BASE_URL: http://127.0.0.1:8103/
       MEDPLUM_STORAGE_BASE_URL: ${MEDPLUM_PUBLIC_BASE_URL:?Set the Render /medplum URL in the Codespaces environment}storage/
       MEDPLUM_APP_BASE_URL: ${MEDPLUM_STAFF_URL:-https://teleemon-staff-demo.onrender.com/}
       MEDPLUM_DEFAULT_SUPER_ADMIN_EMAIL: ${MEDPLUM_ADMIN_EMAIL}
