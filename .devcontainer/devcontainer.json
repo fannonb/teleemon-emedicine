@@ -1,0 +1,25 @@
+{
+  "name": "Teleemon synthetic demo backend",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "enableNonRootDocker": true,
+      "installDockerBuildx": true
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+  "forwardPorts": [3400],
+  "portsAttributes": {
+    "3400": {
+      "label": "Teleemon demo API gateway",
+      "visibility": "public",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "npm ci --include=dev && npm run bots:build",
+  "postStartCommand": "node render/codespaces/start.mjs"
+}

@@ -1,0 +1,90 @@
+# Synthetic demo infrastructure. Only Medplum and the ledger database publish ports, bound to
+# the Codespace loopback. Codespaces forwards only port 3400 (see .devcontainer/devcontainer.json).
+services:
+  medplum-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: medplum
+      POSTGRES_USER: medplum
+      POSTGRES_PASSWORD: ${MEDPLUM_DB_PASSWORD:?Run the Codespaces bootstrap first}
+    volumes:
+      - medplum-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medplum -d medplum"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${MEDPLUM_REDIS_PASSWORD:?Run the Codespaces bootstrap first}"]
+    environment:
+      MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:?Run the Codespaces bootstrap first}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$MEDPLUM_REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ledger-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: teleemon_ledger
+      POSTGRES_USER: teleemon_ledger
+      POSTGRES_PASSWORD: ${LEDGER_DB_PASSWORD:?Run the Codespaces bootstrap first}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - ledger-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U teleemon_ledger -d teleemon_ledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  medplum:
+    build:
+      context: ../medplum
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      medplum-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: "8103"
+      DATABASE_URL: postgresql://medplum:${MEDPLUM_DB_PASSWORD}@medplum-db:5432/medplum
+      REDIS_URL: redis://:${MEDPLUM_REDIS_PASSWORD}@redis:6379
+      MEDPLUM_BASE_URL: ${MEDPLUM_PUBLIC_BASE_URL:?Set the Render /medplum URL in the Codespaces environment}
+      MEDPLUM_STORAGE_BASE_URL: ${MEDPLUM_PUBLIC_BASE_URL:?Set the Render /medplum URL in the Codespaces environment}storage/
+      MEDPLUM_APP_BASE_URL: ${MEDPLUM_STAFF_URL:-https://teleemon-staff-demo.onrender.com/}
+      MEDPLUM_DEFAULT_SUPER_ADMIN_EMAIL: ${MEDPLUM_ADMIN_EMAIL}
+      MEDPLUM_DEFAULT_SUPER_ADMIN_PASSWORD: ${MEDPLUM_ADMIN_PASSWORD}
+      MEDPLUM_BINARY_STORAGE: file:/data/binary/
+      MEDPLUM_SUPPORT_EMAIL: demo@teleemon.test
+      MEDPLUM_EMAIL_PROVIDER: none
+      MEDPLUM_VM_CONTEXT_BOTS_ENABLED: "true"
+      MEDPLUM_DEFAULT_BOT_RUNTIME_VERSION: vmcontext
+      MEDPLUM_PRE_COMMIT_SUBSCRIPTIONS_ENABLED: "true"
+      MEDPLUM_SAVE_AUDIT_EVENTS: "true"
+      MEDPLUM_ALLOWED_ORIGINS: "*"
+      MEDPLUM_LOG_LEVEL: info
+    ports:
+      - "127.0.0.1:8103:8103"
+    volumes:
+      - medplum-binary:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8103/healthcheck').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+volumes:
+  medplum-db:
+  ledger-db:
+  medplum-binary:
