@@ -2,13 +2,29 @@
 
 Prepared 19 October 2026 for a client demonstration using synthetic data only. This is not a production release. Live integrations remain disabled.
 
-## Status and account prerequisites
+## Active hybrid demo — 19 October 2026
 
-- Official Render CLI v2.30.0 is installed at `.render.local/bin/render.exe`.
+The owner selected the free hybrid topology. Two free Render Node gateways are deployed:
+
+- Provider: https://teleemon-staff-demo.onrender.com/signin
+- Patient: https://teleemon-patient-demo.onrender.com/signin
+- Source: https://github.com/fannonb/teleemon-emedicine (`main`). Private proposals, local secrets, database dumps and review screenshots are excluded from publication.
+
+The provider and patient gateways connect through one token-protected Cloudflare tunnel to `render/hybrid-backend.mjs` on `127.0.0.1:3400`. This gateway forwards fixed portal/ledger/scribe routes and an allowlisted Medplum API prefix; raw administrative paths are unavailable. The shared token is held only by the local and Render server processes, not by the built browser apps. Focused proxy tests pass 6/6; an unauthenticated request to the tunnel returns 401 and an administrative path returns 404.
+
+Existing local Medplum/PostgreSQL/Redis data is retained. The local Medplum process uses an ignored demo configuration with HTTPS public URLs; the original configuration file is unchanged. The patient application's HTTPS OAuth callback was added without removing its localhost callback. Do not run setup or seed just to restart this demo.
+
+**Availability:** this computer, its backend processes, its internet connection and the Cloudflare tunnel must remain running. Render free gateways can sleep after inactivity. Open and rehearse both apps before the presentation. If the tunnel restarts and receives a different hostname, update the server-side `*_API_URL` values on both Render services and restart/redeploy them. Never put the shared token into a `VITE_*` variable. This setup is not an independent always-on cloud backend.
+
+Local-only operational state and screenshots are in ignored `.render.local/`. See `.render.local/DEMO-ACCESS.md` for account and session notes. The paid root Blueprint remains unapplied; the free-only companion is `render/hybrid-render.yaml`.
+
+## CLI setup and account prerequisites
+
+- Official Render CLI v2.30.0 is installed at `.render.local/bin/render.exe` and authorized for the selected workspace.
 - CLI configuration is intentionally isolated in `.render.local/config`; the existing `*.local` ignore rule excludes both the binary and credentials from Git.
 - Provider and patient production builds passed locally on 19 October 2026. Bundle-size warnings are informational.
-- The local repository currently has no remote. Render needs access to a Git repository containing the source, or a published container image. No source has been uploaded by this deployment attempt.
-- CLI device authorization and workspace selection are required before remote validation or provisioning. No Render resources have been created by this attempt.
+- The local repository is pushed to the owner-specified GitHub remote and both frontend services were created with the CLI using `--plan free` and automatic deployment disabled.
+- Node is pinned to the verified release `22.23.3`; the previous `22.20.5` pin was not a published Node release.
 
 In PowerShell from the repository root:
 
@@ -66,6 +82,6 @@ A strictly free alternative is Render-hosted frontends connected to the existing
 - Verify actual upstream connectivity, not only frontend `/healthz` responses.
 - Open the workflows before the meeting and keep the currently working local apps as a backup.
 
-## Outstanding inputs
+## Remaining production work
 
-The deployment cannot finish until the Render CLI is authorized, the intended workspace and accessible Git repository are known, and either the paid full-stack configuration or a specific free hybrid topology is selected. Do not report the app as deployed until its public URLs and representative end-to-end workflows have been verified.
+This is a synthetic client demo. No paid backend resources were provisioned, no live integrations were enabled, and no production go-live was authorized. A future independent cloud backend, vendor qualification and the existing readiness/BAA gates remain separate work. See [the implementation roadmap](APP-READINESS-AND-IMPLEMENTATION-ROADMAP.md).
