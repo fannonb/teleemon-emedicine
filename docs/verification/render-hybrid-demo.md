@@ -18,6 +18,7 @@
 - Both remote frontend `/healthz` and proxied Medplum `/healthcheck` return 200. OAuth discovery reports the public HTTPS issuer and token endpoints.
 - Existing synthetic practice administrator login reaches the hosted Today dashboard, patient directory/pagination and calendar.
 - Existing synthetic patient login reaches the hosted home page and visit page, displaying the existing appointment and check-in state.
+- The existing Maya encounter opens with its documentation form, chart context and signing controls; no note was signed or clinical text changed during this check. Patient billing loads its existing zero balance and empty statement list.
 - Patient OAuth client includes the new exact HTTPS origin callback and retains its existing local callback.
 - Worker starts with SMS/email/fax log delivery, eRx/clearinghouse mocks and sandbox meeting links.
 
