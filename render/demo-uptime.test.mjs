@@ -45,3 +45,14 @@ test('deleted or unavailable Codespaces require an operator instead of provision
   await assert.rejects(recoverDemo({ run: () => { count++; return '{"state":"Deleted"}'; } }), /operator attention/);
   assert.equal(count, 1);
 });
+test('recovery waits for an in-progress shutdown before requesting a single resume', async () => {
+  const states = ['ShuttingDown', 'Shutdown', 'Starting', 'Available'];
+  let starts = 0;
+  await recoverDemo({ pause: async () => {}, run: (args) => {
+    if (args[0] === 'api' && args.length === 2) return JSON.stringify({ state: states.shift() });
+    if (args.includes('POST')) starts++;
+    return '';
+  } });
+  assert.equal(starts, 1);
+  assert.equal(states.length, 0);
+});

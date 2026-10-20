@@ -21,13 +21,15 @@ export async function recoverDemo({
   pause = (ms) => new Promise((r) => setTimeout(r, ms)),
 } = {}) {
   let state = JSON.parse(run(['api', ENDPOINT])).state;
-  if (state === 'Shutdown') {
-    run(['api', '--method', 'POST', `${ENDPOINT}/start`]);
-    console.log('Requested resume of the existing demo Codespace.');
-  } else if (!['Available', 'Starting', 'Rebuilding', 'Provisioning', 'Awaiting'].includes(state)) {
-    throw new Error(`Codespace state ${state} requires operator attention; no replacement will be created.`);
-  }
+  let startRequested = false;
   for (let attempt = 0; state !== 'Available' && attempt < 60; attempt++) {
+    if (state === 'Shutdown' && !startRequested) {
+      run(['api', '--method', 'POST', `${ENDPOINT}/start`]);
+      startRequested = true;
+      console.log('Requested resume of the existing demo Codespace.');
+    } else if (!['Shutdown', 'ShuttingDown', 'Starting', 'Rebuilding', 'Provisioning', 'Awaiting'].includes(state)) {
+      throw new Error(`Codespace state ${state} requires operator attention; no replacement will be created.`);
+    }
     await pause(5000);
     state = JSON.parse(run(['api', ENDPOINT])).state;
   }
