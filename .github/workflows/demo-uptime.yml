@@ -1,0 +1,60 @@
+name: Demo uptime
+
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+    - cron: '19 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-uptime
+  cancel-in-progress: false
+
+jobs:
+  health:
+    if: vars.DEMO_UPTIME_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out monitor
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Check temporary monitoring window
+        id: window
+        env:
+          DEMO_UPTIME_UNTIL: ${{ vars.DEMO_UPTIME_UNTIL }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const until = Date.parse(process.env.DEMO_UPTIME_UNTIL ?? '');
+          const active = Number.isFinite(until) && until > Date.now();
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `active=${active}\n`);
+          if (!active) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, 'Temporary uptime window has expired or is not configured. No requests or recovery were performed.\n');
+          NODE
+      - name: Probe both public APIs
+        if: steps.window.outputs.active == 'true'
+        id: probe
+        continue-on-error: true
+        run: node render/monitor-demo.mjs
+      - name: Resume or maintain the existing demo backend
+        id: recovery
+        if: >-
+          steps.window.outputs.active == 'true' &&
+          vars.DEMO_CODESPACE_RECOVERY_ENABLED == 'true' &&
+          (steps.probe.outcome == 'failure' || github.event_name == 'workflow_dispatch' || github.event.schedule == '19 * * * *')
+        env:
+          GH_TOKEN: ${{ secrets.DEMO_CODESPACES_TOKEN }}
+          DEMO_CODESPACE_RECOVERY_ENABLED: ${{ vars.DEMO_CODESPACE_RECOVERY_ENABLED }}
+          DEMO_CODESPACES_QUOTA_CONFIRMED: ${{ vars.DEMO_CODESPACES_QUOTA_CONFIRMED }}
+          DEMO_UPTIME_UNTIL: ${{ vars.DEMO_UPTIME_UNTIL }}
+        run: node render/recover-demo.mjs
+      - name: Verify end-to-end availability
+        if: always() && steps.window.outputs.active == 'true' && steps.recovery.outcome != 'skipped'
+        run: node render/monitor-demo.mjs
+      - name: Report an unrecovered outage
+        if: steps.probe.outcome == 'failure' && steps.recovery.outcome == 'skipped'
+        run: exit 1
