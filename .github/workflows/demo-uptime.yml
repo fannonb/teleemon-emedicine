@@ -5,6 +5,11 @@ on:
     - cron: '2-59/5 * * * *'
     - cron: '19 * * * *'
   workflow_dispatch:
+    inputs:
+      recover_first:
+        description: Resume the backend before probing (manual recovery or restart rehearsal)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -36,7 +41,7 @@ jobs:
           if (!active) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, 'Temporary uptime window has expired or is not configured. No requests or recovery were performed.\n');
           NODE
       - name: Probe both public APIs
-        if: steps.window.outputs.active == 'true'
+        if: steps.window.outputs.active == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.recover_first)
         id: probe
         continue-on-error: true
         run: node render/monitor-demo.mjs

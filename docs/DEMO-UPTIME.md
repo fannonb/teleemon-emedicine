@@ -40,3 +40,5 @@ Keep the initial monitoring window short and extend it deliberately. Disable rec
 ## Validation
 
 Run `node --test render/demo-uptime.test.mjs render/gateway-hybrid.test.mjs render/hybrid-backend.test.mjs`, then `node render/monitor-demo.mjs`. After pushing the workflow, set the variables, trigger `gh workflow run demo-uptime.yml`, and verify its completed run and summary. Do not claim backend recovery is deployed until a run containing the recovery step succeeds.
+
+For a manual recovery or controlled restart rehearsal, use `gh workflow run demo-uptime.yml -f recover_first=true`. This resumes the backend before probing, avoiding the initial cold-start retries while the Codespace is known to be shut down. Scheduled runs continue to probe before attempting recovery.
