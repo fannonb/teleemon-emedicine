@@ -19,6 +19,7 @@ export async function recoverDemo({
     stdio: ['pipe', 'pipe', 'pipe'], ...options,
   }),
   pause = (ms) => new Promise((r) => setTimeout(r, ms)),
+  until = process.env.DEMO_UPTIME_UNTIL,
 } = {}) {
   let state = JSON.parse(run(['api', ENDPOINT])).state;
   let startRequested = false;
@@ -37,7 +38,8 @@ export async function recoverDemo({
   // gh creates an ephemeral runner SSH key. No private key, Render token, database password,
   // or HYBRID_DEMO_TOKEN is copied into GitHub Actions.
   run(['codespace', 'ssh', '-c', CODESPACE, '--', '-o', 'BatchMode=yes', 'bash -s'], {
-    input: readFileSync(new URL('./codespaces/ensure-running.sh', import.meta.url), 'utf8'),
+    input: (until ? `export DEMO_UPTIME_UNTIL='${new Date(until).toISOString()}'\n` : '') +
+      readFileSync(new URL('./codespaces/ensure-running.sh', import.meta.url), 'utf8'),
   });
   // Restore only the port that the user explicitly approved. Never forward database/API ports.
   run(['codespace', 'ports', 'visibility', '3400:public', '-c', CODESPACE]);
