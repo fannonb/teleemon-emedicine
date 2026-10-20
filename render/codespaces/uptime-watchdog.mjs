@@ -1,6 +1,6 @@
 // A second timer, independent of GitHub's best-effort schedule. It keeps both public Render
 // gateways receiving requests while this Codespace is running. It cannot recover a stopped VM.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,14 +14,19 @@ export const INTERVAL_MS = 120000;
 
 export function activeWindow(config, now = Date.now()) {
   const until = Date.parse(config?.until ?? '');
-  return Number.isFinite(until) && until > now;
+  return config?.enabled !== false && Number.isFinite(until) && until > now;
+}
+
+export function saveJson(file, value) {
+  writeFileSync(`${file}.tmp`, JSON.stringify(value, null, 2) + '\n', { mode: 0o600 });
+  renameSync(`${file}.tmp`, file);
 }
 
 export async function watchdogTick({
   config, previous = {}, probe = () => monitorDemo({ attempts: 2 }), now = () => Date.now(),
 } = {}) {
   const startedAt = now();
-  if (!activeWindow(config, startedAt)) return { active: false, until: config?.until ?? null };
+  if (!activeWindow(config, startedAt)) return { ...previous, active: false, until: config?.until ?? null };
   const results = await probe();
   const observation = {
     startedAt: new Date(startedAt).toISOString(), completedAt: new Date(now()).toISOString(),
@@ -36,7 +41,7 @@ export async function watchdogTick({
 
 export async function runWatchdog({
   readConfig = () => JSON.parse(readFileSync(CONFIG_FILE, 'utf8')),
-  save = (state) => writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + '\n', { mode: 0o600 }),
+  save = (state) => saveJson(STATE_FILE, state),
   probe, now = () => Date.now(), pause = (ms) => new Promise((r) => setTimeout(r, ms)),
 } = {}) {
   let state = {};

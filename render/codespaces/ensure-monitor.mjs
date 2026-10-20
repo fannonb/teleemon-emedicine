@@ -1,15 +1,19 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { activeWindow, CONFIG_FILE, PID_FILE, UPTIME_DIR } from './uptime-watchdog.mjs';
+import { activeWindow, CONFIG_FILE, PID_FILE, UPTIME_DIR, saveJson } from './uptime-watchdog.mjs';
 
-export function ensureMonitor(env = process.env) {
+export function ensureMonitor(env = process.env, { disable = false } = {}) {
   if (env.CODESPACES !== 'true') throw new Error('Monitor launcher is Codespaces-only.');
   mkdirSync(UPTIME_DIR, { recursive: true, mode: 0o700 });
+  if (disable) {
+    saveJson(CONFIG_FILE, { enabled: false });
+    return undefined;
+  }
   if (env.DEMO_UPTIME_UNTIL) {
     const parsed = Date.parse(env.DEMO_UPTIME_UNTIL);
     if (!Number.isFinite(parsed)) throw new Error('Invalid temporary uptime expiry.');
-    writeFileSync(CONFIG_FILE, JSON.stringify({ until: new Date(parsed).toISOString() }) + '\n', { mode: 0o600 });
+    saveJson(CONFIG_FILE, { enabled: true, until: new Date(parsed).toISOString() });
   }
   let config;
   try { config = JSON.parse(readFileSync(CONFIG_FILE, 'utf8')); } catch { return undefined; }
@@ -31,6 +35,6 @@ export function ensureMonitor(env = process.env) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const pid = ensureMonitor();
+  const pid = ensureMonitor(process.env, { disable: process.argv.includes('--disable') });
   console.log(pid ? 'Independent uptime watchdog is running.' : 'Independent uptime watchdog is disabled or expired.');
 }

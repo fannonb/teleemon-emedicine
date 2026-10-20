@@ -1,8 +1,20 @@
 # Temporary demo uptime
 
-The `Demo uptime` GitHub Actions workflow checks both hosted `/medplum/healthcheck` endpoints every five minutes. It requires valid JSON confirming API, PostgreSQL and Redis health; an HTML login page or a redirect cannot pass. Cold starts receive up to three attempts with 90-second request timeouts. Results appear in the workflow run summary; failures mark the run failed and use the account's existing Actions notification preferences.
+The Codespace's independent watchdog checks both hosted `/medplum/healthcheck` endpoints every two minutes while the Codespace is running. The `Demo uptime` GitHub Actions workflow is also configured for five-minute checks and hourly maintenance, but its recurring delivery is best effort. The checks require valid JSON confirming API, PostgreSQL and Redis health; an HTML login page or a redirect cannot pass. Cold starts receive bounded retries. Workflow results appear in the run summary; failures mark the run failed and use the account's existing Actions notification preferences.
 
 The workflow runs on GitHub-hosted runners, independently of the operator's computer. Scheduled Actions are best effort: they can be delayed, and public-repository schedules are disabled after 60 days without repository activity. This is temporary demo support, not an availability guarantee.
+
+**Audit correction, 20 October:** the initial verification exercised only `workflow_dispatch`. During the following hour, the active workflow received no `schedule` runs at all, and both Render gateways restarted around 12:06 UTC. Successful manual executions did not verify recurring delivery. The independent Codespace timer was added because GitHub cron cannot be relied upon to keep a service below Render's 15-minute idle threshold. The GitHub schedule was simplified and re-registered, but must not be described as verified until an actual `schedule` event completes.
+
+## Independent Codespace timer
+
+`render/codespaces/ensure-monitor.mjs` launches a single `uptime-watchdog.mjs` process. The bootstrap and recovery scripts invoke the launcher, so the monitor resumes with the backend. Its expiry configuration and last 60 observations are stored under `~/.teleemon-codespaces/uptime/`, with private filesystem permissions. Configuration and status writes use atomic replacement. No additional credentials are needed.
+
+To inspect actual timer delivery in the Codespace, read `~/.teleemon-codespaces/uptime/state.json`. Check that `ticks` increases, successive `startedAt` timestamps are approximately two minutes apart, and both site results are healthy. A stale state file is not evidence of an active monitor.
+
+To stop this independent timer, run `node render/codespaces/ensure-monitor.mjs --disable` inside the Codespace. It exits at its next tick. Setting only the GitHub variable `DEMO_UPTIME_ENABLED=false` does **not** stop this separate process. To re-enable or change expiry, set `DEMO_UPTIME_UNTIL` to the approved timestamp and run the launcher again.
+
+This timer keeps Render warm while the Codespace runs; it cannot restart a stopped Codespace. An external scheduler such as cron-job.org is needed for checks and recovery dispatch that remain independent of both Codespaces and GitHub's cron delivery. HTTP health probes also do not extend a user's application login session.
 
 ## Configuration
 

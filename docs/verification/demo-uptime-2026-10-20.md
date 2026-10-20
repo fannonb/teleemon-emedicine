@@ -1,5 +1,7 @@
 # Temporary hosted monitoring verification — 20 October 2026
 
+**Later audit correction:** the successful runs below were manual `workflow_dispatch` tests. No scheduled run was delivered during the following hour, and the Render apps spun down and restarted. These tests verified the probe/recovery execution path, not the recurring scheduler. See `docs/DEMO-UPTIME.md` for the independent watchdog added after this finding.
+
 ## Deployed configuration
 
 - Workflow: `.github/workflows/demo-uptime.yml`, on the repository's `main` branch.

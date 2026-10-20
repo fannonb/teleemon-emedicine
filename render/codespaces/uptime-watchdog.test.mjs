@@ -6,6 +6,10 @@ test('expired watchdog never sends requests', async () => {
   const state = await watchdogTick({ config: { until: '2026-10-20T00:00:00Z' }, now: () => Date.parse('2026-10-21T00:00:00Z'), probe: () => { throw new Error('Must not probe'); } });
   assert.equal(state.active, false);
 });
+test('disabled watchdog exits without sending requests despite an unexpired window', async () => {
+  const state = await watchdogTick({ config: { enabled: false, until: '2026-10-27T00:00:00Z' }, now: () => Date.parse('2026-10-20T00:00:00Z'), probe: () => { throw new Error('Must not probe'); } });
+  assert.equal(state.active, false);
+});
 test('watchdog timer independently produces multiple observations at the configured cadence', async () => {
   let clock = Date.parse('2026-10-20T00:00:00Z');
   const expiry = clock + INTERVAL_MS * 3;
