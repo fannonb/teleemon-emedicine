@@ -4,6 +4,21 @@ import { buildProxyHeaders, buildUpstreams, upstreamTarget } from './gateway.mjs
 
 const token = 'test-only-shared-token-with-at-least-32-characters';
 
+test('regional Codespaces ingress retains the original HTTPS origin and Host header', () => {
+  const env = {
+    MEDPLUM_API_URL: 'https://example-3400.app.github.dev',
+    HYBRID_DEMO_TOKEN: token,
+    HYBRID_TUNNEL_CONNECT_HOST: 'v3-uks1.cluster.rel.tunnels.api.visualstudio.com',
+  };
+  const { upstreams } = buildUpstreams(env);
+  const target = upstreamTarget(upstreams[0], '/medplum/healthcheck');
+  assert.equal(upstreams[0].connectHost, env.HYBRID_TUNNEL_CONNECT_HOST);
+  assert.equal(target.hostname, 'example-3400.app.github.dev');
+  assert.equal(buildProxyHeaders({}, upstreams[0], target, token).host, target.hostname);
+  assert.throws(() => buildUpstreams({ ...env, HYBRID_TUNNEL_CONNECT_HOST: 'untrusted.example' }), /regional ingress/);
+  assert.throws(() => buildUpstreams({ ...env, MEDPLUM_API_URL: 'https://example.com' }), /Codespaces upstream/);
+});
+
 test('hybrid API URL is HTTPS-only, origin-only, and requires a shared secret', () => {
   const { upstreams, proxyToken } = buildUpstreams({
     PORTAL_API_URL: 'https://demo.trycloudflare.com',

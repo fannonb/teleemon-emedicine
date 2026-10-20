@@ -31,6 +31,12 @@ Keep `HYBRID_DEMO_TOKEN` set to the same secret on each Render service and in th
 
 The Codespaces public URL can change if the Codespace is deleted and recreated. If it changes, update all four Render API URL settings again. A stopped Codespace makes the backend unavailable; resume it and wait for the startup message before opening the Render apps.
 
+After resuming, also check port `3400` in the Ports panel. On 20 October 2026 the Codespace resumed with that port **Private**, even though `portsAttributes` requests public visibility. A healthy local backend is insufficient in that state: GitHub redirects gateway requests to its sign-in page and the Render API routes fail. An authorized operator must restore **Public** visibility for port `3400` only, then verify an anonymous request to `/medplum/healthcheck` returns `401` and a request through each Render app's `/medplum/healthcheck` returns `200`. Do not publish the database or Medplum ports.
+
+The current demo Codespace has a 240-minute idle timeout. Public HTTP traffic is not a guarantee that it stays running. This arrangement requires an operator to resume it before use; continuous availability requires an always-on backend deployment.
+
+If the public gateway works directly but Render receives an empty `404` with a different `x-served-by` tunnel region, the geographic ingress may be unhealthy. Both Render gateways support the optional server-side `HYBRID_TUNNEL_CONNECT_HOST` setting. Set it to a verified healthy Microsoft regional ingress hostname (on 20 October 2026: `v3-uks1.cluster.rel.tunnels.api.visualstudio.com`) and deploy the updated gateway. This changes the connection destination while preserving the Codespaces URL as the HTTP Host and TLS server name, with normal certificate verification and the existing shared-token authorization. It accepts only Microsoft regional ingress hostnames for Codespaces upstreams. Remove the setting and redeploy to return to geographic DNS routing. Recheck the chosen ingress after a Codespace restart.
+
 ## Manual recovery commands
 
 Run these from a Codespaces terminal at the repository root. The automatic startup normally performs them:

@@ -65,6 +65,12 @@ const UPSTREAMS = [
  */
 export function buildUpstreams(env = process.env) {
   const result = [];
+  // Optional regional ingress for Codespaces when its geographic DNS ingress returns 404.
+  // This changes only the connection destination; HTTPS still verifies the original hostname.
+  const tunnelConnectHost = env.HYBRID_TUNNEL_CONNECT_HOST?.trim();
+  if (tunnelConnectHost && !/^v\d+-[a-z0-9]+\.cluster\.rel\.tunnels\.api\.visualstudio\.com$/.test(tunnelConnectHost)) {
+    throw new Error('HYBRID_TUNNEL_CONNECT_HOST must be a Microsoft tunnel regional ingress hostname');
+  }
   for (const definition of UPSTREAMS) {
     const urlValue = env[`${definition.name}_URL`]?.trim();
     const host = env[`${definition.name}_HOST`]?.trim();
@@ -80,7 +86,10 @@ export function buildUpstreams(env = process.env) {
       if (baseUrl.protocol !== 'https:' || !baseUrl.hostname || baseUrl.username || baseUrl.password || baseUrl.pathname !== '/' || baseUrl.search || baseUrl.hash) {
         throw new Error(`${definition.name}_URL must be an HTTPS origin without credentials, path, query, or fragment`);
       }
-      result.push({ ...definition, mode: 'url', baseUrl });
+      if (tunnelConnectHost && !baseUrl.hostname.endsWith('.app.github.dev')) {
+        throw new Error('HYBRID_TUNNEL_CONNECT_HOST requires a Codespaces upstream');
+      }
+      result.push({ ...definition, mode: 'url', baseUrl, ...(tunnelConnectHost ? { connectHost: tunnelConnectHost } : {}) });
       continue;
     }
     if (host) {
@@ -141,7 +150,8 @@ function proxy(req, res, upstream, proxyToken) {
   const client = target.protocol === 'https:' ? https : http;
   const request = client.request(
     {
-      hostname: target.hostname,
+      hostname: upstream.connectHost ?? target.hostname,
+      ...(upstream.connectHost ? { servername: target.hostname } : {}),
       port: target.port || (target.protocol === 'https:' ? 443 : 80),
       method: req.method,
       path: `${target.pathname}${target.search}`,
