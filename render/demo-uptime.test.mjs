@@ -56,3 +56,43 @@ test('recovery waits for an in-progress shutdown before requesting a single resu
   assert.equal(starts, 1);
   assert.equal(states.length, 0);
 });
+
+test('recovery tolerates startup relay failures before restoring the gateway', async () => {
+  const calls = [];
+  let sshAttempts = 0;
+  let portAttempts = 0;
+  await recoverDemo({ pause: async () => {}, run: (args) => {
+    calls.push(args);
+    if (args[0] === 'api') return '{"state":"Available"}';
+    if (args[1] === 'ssh' && ++sshAttempts < 3) throw new Error('relay not ready');
+    if (args.includes('3400:public') && ++portAttempts < 2) throw new Error('tunnel not ready');
+    return '';
+  } });
+  assert.equal(sshAttempts, 3);
+  assert.equal(portAttempts, 2);
+  assert.ok(calls.findIndex((args) => args.includes('3400:public')) >
+    calls.findLastIndex((args) => args[1] === 'ssh'));
+});
+
+test('persistent SSH failure is bounded and reports its stage without CLI secrets', async () => {
+  const calls = [];
+  await assert.rejects(recoverDemo({ pause: async () => {}, run: (args) => {
+    calls.push(args);
+    if (args[0] === 'api') return '{"state":"Available"}';
+    throw new Error('sensitive-cli-output');
+  } }), { message: 'Backend SSH recovery failed after 3 attempts.' });
+  assert.equal(calls.filter((args) => args[1] === 'ssh').length, 3);
+  assert.ok(!calls.some((args) => args.includes('3400:public')));
+});
+
+test('recovery retries a transient status API failure', async () => {
+  let reads = 0;
+  await recoverDemo({ pause: async () => {}, run: (args) => {
+    if (args[0] === 'api') {
+      if (++reads === 1) throw new Error('temporary API error');
+      return '{"state":"Available"}';
+    }
+    return '';
+  } });
+  assert.equal(reads, 2);
+});

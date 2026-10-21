@@ -16,6 +16,14 @@ To stop this independent timer, run `node render/codespaces/ensure-monitor.mjs -
 
 This timer keeps Render warm while the Codespace runs; it cannot restart a stopped Codespace. An external scheduler such as cron-job.org is needed for checks and recovery dispatch that remain independent of both Codespaces and GitHub's cron delivery. HTTP health probes also do not extend a user's application login session.
 
+## External cron-job.org checks
+
+The external jobs `Teleemon staff API health` and `Teleemon patient API health` probe each Render site's `/medplum/healthcheck` every five minutes (`*/5 * * * *`, timezone `Africa/Nairobi`). Both are enabled with response history saved and expire on 27 October 2026 at 23:59 Nairobi time. Failure notifications are configured after three failures, with recovery and automatic-disable notifications enabled through the account's existing channels. Redirects are not treated as success.
+
+These HTTP jobs keep the public gateways active and report outages; they do not dispatch backend recovery or restart a stopped Codespace. The existing recovery workflow remains responsible for backend recovery. Job definitions are recorded in `render/cron-job-demo-jobs.json`; manage live jobs in the cron-job.org console: staff job `8687584`, patient job `8687595`.
+
+Both external test runs returned HTTP 200 on 20 October, with JSON confirming `ok`, PostgreSQL and Redis health. Actual automatic delivery was also verified: both jobs executed successfully at 18:15:02 Nairobi time on 20 October 2026 (staff 2.39 seconds, patient 3.15 seconds), and the console listed the next executions at 18:20. This verifies the first scheduled delivery; it is not an availability guarantee.
+
 ## Configuration
 
 Repository: `fannonb/teleemon-emedicine`.
@@ -42,6 +50,8 @@ On a failed health probe, on manual dispatch, and hourly while enabled, recovery
 5. Rechecks both public Render API endpoints.
 
 It never creates a Codespace or paid service, deletes data, forwards another port, or changes spending limits. Hourly SSH maintenance is intended to refresh activity during the temporary demo window; the 12-hour Codespace lifetime still applies, and recovery can involve downtime. Expired credentials, insufficient quota, a GitHub outage, or regional tunnel faults may still require an operator. The existing `HYBRID_TUNNEL_CONNECT_HOST` setting remains in place.
+
+**Recovery failure, 21 October:** run `39553041859` resumed the Codespace, then failed before restoring port 3400. Inspection found the Codespace available and its backend healthy after running the existing recovery script, but port 3400 remained private. The existing logs do not identify the failed CLI operation. The recovery fix adds bounded retries for status/resume API calls, SSH startup and port restoration, and reports the failed stage without printing raw CLI errors. Local regression tests cover transient relay/port/API failures and exhausted SSH retries. Deployment and live verification require restoration of the gateway's approved public visibility.
 
 ## Cost controls
 

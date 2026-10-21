@@ -1,0 +1,52 @@
+[
+  {
+    "job": {
+      "title": "Teleemon staff API health",
+      "url": "https://teleemon-staff-demo.onrender.com/medplum/healthcheck",
+      "enabled": true,
+      "saveResponses": true,
+      "requestMethod": 0,
+      "redirectSuccess": false,
+      "schedule": {
+        "timezone": "Africa/Nairobi",
+        "expiresAt": 20261027235959,
+        "hours": [-1],
+        "mdays": [-1],
+        "minutes": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55],
+        "months": [-1],
+        "wdays": [-1]
+      },
+      "notification": {
+        "onFailure": true,
+        "onFailureCount": 3,
+        "onSuccess": true,
+        "onDisable": true
+      }
+    }
+  },
+  {
+    "job": {
+      "title": "Teleemon patient API health",
+      "url": "https://teleemon-patient-demo.onrender.com/medplum/healthcheck",
+      "enabled": true,
+      "saveResponses": true,
+      "requestMethod": 0,
+      "redirectSuccess": false,
+      "schedule": {
+        "timezone": "Africa/Nairobi",
+        "expiresAt": 20261027235959,
+        "hours": [-1],
+        "mdays": [-1],
+        "minutes": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55],
+        "months": [-1],
+        "wdays": [-1]
+      },
+      "notification": {
+        "onFailure": true,
+        "onFailureCount": 3,
+        "onSuccess": true,
+        "onDisable": true
+      }
+    }
+  }
+]

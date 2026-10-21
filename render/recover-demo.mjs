@@ -6,6 +6,19 @@ import { fileURLToPath } from 'node:url';
 export const CODESPACE = 'teleemon-synthetic-client-demo-5vxj76x9pjrhvp6v';
 const ENDPOINT = `/user/codespaces/${CODESPACE}`;
 
+// Codespaces can report Available before its SSH relay and forwarded ports are ready.
+// Keep raw CLI errors out of Actions logs: they can contain connection credentials.
+async function retryRecoveryStep(label, action, pause, attempts = 6) {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try { return action(); }
+    catch {
+      if (attempt === attempts) throw new Error(`${label} failed after ${attempts} attempts.`);
+      console.log(`${label} not ready; retrying (${attempt}/${attempts}).`);
+      await pause(10000);
+    }
+  }
+}
+
 export function recoveryEnabled(env, now = Date.now()) {
   const expiry = Date.parse(env.DEMO_UPTIME_UNTIL ?? '');
   return env.DEMO_CODESPACE_RECOVERY_ENABLED === 'true' &&
@@ -21,28 +34,32 @@ export async function recoverDemo({
   pause = (ms) => new Promise((r) => setTimeout(r, ms)),
   until = process.env.DEMO_UPTIME_UNTIL,
 } = {}) {
-  let state = JSON.parse(run(['api', ENDPOINT])).state;
+  const readState = () => retryRecoveryStep('Codespace status',
+    () => JSON.parse(run(['api', ENDPOINT])).state, pause);
+  let state = await readState();
   let startRequested = false;
   for (let attempt = 0; state !== 'Available' && attempt < 60; attempt++) {
     if (state === 'Shutdown' && !startRequested) {
-      run(['api', '--method', 'POST', `${ENDPOINT}/start`]);
+      await retryRecoveryStep('Codespace resume',
+        () => run(['api', '--method', 'POST', `${ENDPOINT}/start`]), pause);
       startRequested = true;
       console.log('Requested resume of the existing demo Codespace.');
     } else if (!['Shutdown', 'ShuttingDown', 'Starting', 'Rebuilding', 'Provisioning', 'Awaiting'].includes(state)) {
       throw new Error(`Codespace state ${state} requires operator attention; no replacement will be created.`);
     }
     await pause(5000);
-    state = JSON.parse(run(['api', ENDPOINT])).state;
+    state = await readState();
   }
   if (state !== 'Available') throw new Error('Existing Codespace did not become available.');
   // gh creates an ephemeral runner SSH key. No private key, Render token, database password,
   // or HYBRID_DEMO_TOKEN is copied into GitHub Actions.
-  run(['codespace', 'ssh', '-c', CODESPACE, '--', '-o', 'BatchMode=yes', 'bash -s'], {
+  await retryRecoveryStep('Backend SSH recovery', () => run(['codespace', 'ssh', '-c', CODESPACE, '--', '-o', 'BatchMode=yes', 'bash -s'], {
     input: (until ? `export DEMO_UPTIME_UNTIL='${new Date(until).toISOString()}'\n` : '') +
       readFileSync(new URL('./codespaces/ensure-running.sh', import.meta.url), 'utf8'),
-  });
+  }), pause, 3);
   // Restore only the port that the user explicitly approved. Never forward database/API ports.
-  run(['codespace', 'ports', 'visibility', '3400:public', '-c', CODESPACE]);
+  await retryRecoveryStep('Gateway port restoration',
+    () => run(['codespace', 'ports', 'visibility', '3400:public', '-c', CODESPACE]), pause);
   console.log('Existing backend checked; approved public port 3400 restored.');
 }
 
@@ -55,6 +72,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     process.exitCode = 1;
   } else {
     try { await recoverDemo(); }
-    catch { console.error('Demo recovery failed. Inspect Codespaces status and private logs; no secrets are logged here.'); process.exitCode = 1; }
+    catch (error) {
+      console.error(`Demo recovery failed: ${error.message} Inspect Codespaces status and private logs.`);
+      process.exitCode = 1;
+    }
   }
 }
