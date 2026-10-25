@@ -10,7 +10,6 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 import pg from 'pg';
-import { ensureMonitor } from './ensure-monitor.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ENV_PATH = join(ROOT, '.env.local');
@@ -218,7 +217,6 @@ async function main() {
   const records = services.map(([name, command, args]) => launch(name, command, args, serviceEnv));
   records.push(launch('public-bridge', process.execPath, ['render/codespaces/public-bridge.mjs'], serviceEnv));
   writeFileSync(STATE_FILE, JSON.stringify(records), { mode: 0o600 });
-  ensureMonitor(serviceEnv);
 
   console.log('[codespaces] backend started with synthetic-only fixtures and mock integrations.');
   console.log('[codespaces] only port 3400 is public; database and Medplum ports are not forwarded.');

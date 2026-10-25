@@ -18,7 +18,6 @@ fi
 for attempt in $(seq 1 48); do
   if curl --fail --silent --max-time 5 http://127.0.0.1:3400/healthz >/dev/null &&
      curl --fail --silent --max-time 5 http://127.0.0.1:8103/healthcheck >/dev/null; then
-    node render/codespaces/ensure-monitor.mjs
     echo 'Existing demo backend is healthy.'
     exit 0
   fi
